@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset=utf-8>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Document</title>
+
+  <style>
+    label {
+      display: block;
+      margin: 10px;
+    }
+
+    .result {
+      position: relative;
+      min-height: 100px;
+    }
+
+    .loading:before {
+      position: absolute;
+      content: '';
+      background: rgba(0, 0, 0, 0.6);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .loading:after {
+      position: absolute;
+      color: #fff;
+      content: 'loading...';
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .error {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+
+    [v-cloak] {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"
+       v-cloak>
+    <form @submit="submit"
+          method="POST"
+          action="capture"
+          enctype="application/json">
+      <label>
+        url:
+        <input v-model="url"
+               name="url">
+      </label>
+
+      <label>
+        navigation timeout:
+        <input v-model="timeout"
+               name="timeout"
+               type="number">
+      </label>
+
+      <label>
+        wait after DOMContentLoaded:
+        <input v-model="wait"
+               name="wait"
+               type="number">
+      </label>
+
+      <button>
+        Submit
+      </button>
+    </form>
+
+    <div :class="{result:true,loading:loading}">
+      <pre class="error"
+           v-if="error">
+        {{error}}
+      </pre>
+      <img class="img"
+           src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+           :src="imageUrl"
+           @load="revokeImageUrl"
+           @error="revokeImageUrl">
+    </div>
+  </div>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+
+  <script>
+    Vue.config.devtools = true;
+
+    new Vue({
+      el: '#app',
+      data: function () {
+        return {
+          url: '',
+          timeout: '',
+          wait: '',
+          loading: false,
+          imageUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+          error: '',
+        };
+      },
+      methods: {
+        submit: function (e) {
+          e.preventDefault();
+
+          var that = this;
+
+          that.loading = true;
+          that.error = '';
+
+          axios.post('capture', {
+            url: this.url,
+            timeout: this.timeout,
+            wait: this.wait
+          }, {
+              responseType: 'blob'
+            })
+            .then(function (r) {
+              var url = URL.createObjectURL(r.data, {
+                type: 'image/png'
+              });
+
+              that.loading = false;
+              that.imageUrl = url;
+
+            }).catch(function (err) {
+              that.loading = false;
+              that.error = err.stack;
+            });
+        },
+        revokeImageUrl: function () {
+          try {
+            URL.revokeObjectURL(this.imageUrl);
+          } catch (e) { }
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
